@@ -28,8 +28,13 @@
 package org.beetl.core;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+
+import org.beetl.core.misc.PrimitiveArrayUtil;
 
 /**
  * 用于遍历
@@ -48,6 +53,7 @@ public final class IteratorStatus
 	public final static short MAP = 2;
 	public final static short ITERABLE = 3;
 	public final static short ARRAY = 4;
+	public final static short ENUM = 5;
 
 	public static IteratorStatus getIteratorStatus(Object o)
 	{
@@ -70,7 +76,11 @@ public final class IteratorStatus
 		}
 		else if (o.getClass().isArray())
 		{
-			return new IteratorStatus((Object[]) o);
+			return new IteratorStatus(o, o.getClass().getComponentType().isPrimitive());
+		}
+		else if (o instanceof Enumeration)
+		{
+			return new IteratorStatus((Enumeration) o);
 		}
 		else
 		{
@@ -78,7 +88,7 @@ public final class IteratorStatus
 		}
 	}
 
-	public static IteratorStatus getIteratorStatus(Object o, int type)
+	public static IteratorStatus getIteratorStatusByType(Object o, int type)
 	{
 		switch (type)
 		{
@@ -91,7 +101,9 @@ public final class IteratorStatus
 			case 3:
 				return new IteratorStatus((Iterable) o);
 			case 4:
-				return new IteratorStatus((Object[]) o);
+				return new IteratorStatus(o, o.getClass().getComponentType().isPrimitive());
+			case 5:
+				return new IteratorStatus((Enumeration) o);
 		}
 		throw new RuntimeException("Object:" + o.getClass() + " 不能使用在For循环里");
 
@@ -100,6 +112,14 @@ public final class IteratorStatus
 	public IteratorStatus(Iterator it)
 	{
 		this.it = it;
+
+	}
+
+	public IteratorStatus(Enumeration e)
+	{
+		List list = Collections.list(e);
+		this.it = list.iterator();
+		this.size = list.size();
 
 	}
 
@@ -120,6 +140,22 @@ public final class IteratorStatus
 	{
 		it = new ArrayIterator(array);
 		size = array.length;
+
+	}
+
+	public IteratorStatus(Object o, boolean isPrimitive)
+	{
+		if (isPrimitive)
+		{
+			it = new PrimitiveIterator(o);
+			size = ((PrimitiveIterator) it).length;
+		}
+		else
+		{
+			Object[] array = ((Object[]) o);
+			it = new ArrayIterator(array);
+			size = (array).length;
+		}
 
 	}
 
@@ -209,6 +245,37 @@ public final class IteratorStatus
 		public Object next()
 		{
 			return array[i++];
+		}
+
+		public void remove()
+		{
+			// TODO Auto-generated method stub
+
+		}
+
+	}
+
+	static class PrimitiveIterator implements Iterator
+	{
+		Object o = null;
+		int i = 0;
+		int length = 0;
+
+		PrimitiveIterator(Object o)
+		{
+			this.o = o;
+			this.length = PrimitiveArrayUtil.getSize(o);
+		}
+
+		public boolean hasNext()
+		{
+			// TODO Auto-generated method stub
+			return length > i;
+		}
+
+		public Object next()
+		{
+			return PrimitiveArrayUtil.getObject(o, i++);
 		}
 
 		public void remove()

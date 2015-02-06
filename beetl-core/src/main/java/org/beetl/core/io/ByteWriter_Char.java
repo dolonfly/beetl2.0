@@ -47,6 +47,12 @@ public final class ByteWriter_Char extends ByteWriter
 		this.cs = cs;
 	}
 
+	public ByteWriter_Char(Writer w, String cs, Context ctx, ByteWriter parent)
+	{
+		this(w, cs, ctx);
+		this.parent = parent;
+	}
+
 	@Override
 	public final void write(char[] cbuf) throws IOException
 	{
@@ -91,14 +97,16 @@ public final class ByteWriter_Char extends ByteWriter
 	}
 
 	@Override
-	public ByteWriter getTempWriter()
+	public ByteWriter getTempWriter(ByteWriter parent)
 	{
-		return new ByteWriter_Char(new NoLockStringWriter(), cs, ctx);
+		return new ByteWriter_Char(new NoLockStringWriter(), cs, ctx, parent);
 	}
 
 	@Override
 	public void flush() throws IOException
 	{
+		if (parent != null)
+			parent.flush();
 		this.w.flush();
 
 	}

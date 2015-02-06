@@ -81,6 +81,8 @@ public class Transformator
 
 	String VCR = "<$__VCR>>";
 	String lineSeparator = System.getProperty("line.separator");
+	//回车换行
+	char[] lineSeparatorCharArray = null;
 	// 设置最多max-line行合并输出，现在不支持
 	static int MAX_LINE = 78;
 	// 转义符号
@@ -239,12 +241,14 @@ public class Transformator
 					}
 				}
 				lineSeparator = cr.toString();
+				this.lineSeparatorCharArray = lineSeparator.toCharArray();
 				// this.textMap.put("__VCR", lineSeparator);
 				return;
 			}
 		}
 		//
 
+		this.lineSeparatorCharArray = lineSeparator.toCharArray();
 	}
 
 	public void parser() throws HTMLTagParserException
@@ -293,6 +297,7 @@ public class Transformator
 		{
 			StringBuilder script = new StringBuilder();
 			HTMLTagParser html = new HTMLTagParser(cs, index, true);
+			html.cr = this.lineSeparatorCharArray;
 			html.parser();
 			if (html.hasVarBinding)
 			{
@@ -318,6 +323,10 @@ public class Transformator
 
 				String key = entry.getKey();
 				String value = entry.getValue();
+				if (html.crKey.contains(key))
+				{
+					script.append(this.lineSeparator);
+				}
 				script.append(key).append(":");
 				if (!value.startsWith(this.placeholderStart))
 				{
@@ -330,7 +339,8 @@ public class Transformator
 				{
 					value = new String(value.toCharArray(), this.placeholderStart.length(), value.length()
 							- this.placeholderStart.length() - this.placeholderEnd.length());
-					script.append(value);
+					script.append("(").append(value).append(")");
+					//					script.append(value);
 				}
 				script.append(",");
 			}
@@ -382,6 +392,7 @@ public class Transformator
 			sb.append(script);
 			this.index = html.getIndex();
 			status = 1;
+			this.lineStatus.setStatment();
 		}
 		catch (RuntimeException re)
 		{
@@ -427,6 +438,7 @@ public class Transformator
 			}
 			this.index = html.getIndex();
 			status = 1;
+			this.lineStatus.setStatment();
 		}
 		catch (RuntimeException re)
 		{
@@ -502,10 +514,21 @@ public class Transformator
 				if (appendCR)
 				{
 
-					sb.append(endStatement);
+					lineStatus.setStatment();
+					if (this.lineStatus.onlyStatment())
+					{
+						// 只有控制语句，则如果文本变量都是空格，这些文本变量则认为是格式化的，非输出语句
+						// 需要更改输出
+						reforamtStatmentLine();
+						lineStatus.reset();
+						sb.append(endStatement);
+					}
 
 				}
-				lineStatus.setStatment();
+				else
+				{
+					lineStatus.setStatment();
+				}
 				return;
 			}
 			else if (status != 4)
@@ -520,7 +543,13 @@ public class Transformator
 					{
 						index++;
 					}
-					this.lineStatus.reset();
+					if (this.lineStatus.onlyStatment())
+					{
+						// 只有控制语句，则如果文本变量都是空格，这些文本变量则认为是格式化的，非输出语句
+						// 需要更改输出
+						reforamtStatmentLine();
+						lineStatus.reset();
+					}
 
 				}
 				else
@@ -656,9 +685,12 @@ public class Transformator
 					{
 						// 只有控制语句，则如果文本变量都是空格，这些文本变量则认为是格式化的，非输出语句
 						// 需要更改输出
+						if (temp.length() != 0)
+							createTextNode(temp);
 						reforamtStatmentLine();
 						lineStatus.reset();
 						sb.append(lineSeparator);
+						continue;
 					}
 					else
 					{
@@ -739,6 +771,7 @@ public class Transformator
 		}
 
 		this.sb.append(textVarName);
+		str.setLength(0);
 
 	}
 
@@ -769,7 +802,7 @@ public class Transformator
 			}
 
 		}
-
+		str.setLength(0);
 	}
 
 	private boolean isSpace(StringBuilder str)
@@ -874,7 +907,7 @@ public class Transformator
 		{
 
 			// String str = "   #:var u='hello';:#  \n  $u$";
-			String str = "<#bbsListTag ;page></#bbsListTag>";
+			String str = "  <%%>   \na }";
 
 			BufferedReader reader = new BufferedReader(p.transform(str));
 			String line = null;

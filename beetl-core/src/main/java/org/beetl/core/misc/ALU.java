@@ -650,6 +650,14 @@ public class ALU
 					return b1.equals(b2);
 			}
 		}
+		else if (o1 instanceof Enum)
+		{
+			return (o1.toString()).equals(o2);
+		}
+		else if (o2 instanceof Enum)
+		{
+			return (o2.toString()).equals(o1);
+		}
 
 		return false;
 	}
@@ -687,7 +695,11 @@ public class ALU
 					b2 = getBigDecimal(o2);
 					return b1.compareTo(b2) > 0;
 				default:
-					throw UnsupportedTypeException(o1, o2, node1, node2, ">");
+					int result = compareObject(o1, o2, node1, node2, ">");
+					if (result == -2)
+						throw UnsupportedTypeException(o1, o2, node1, node2, ">");
+					else
+						return result > 0;
 			}
 		}
 		else
@@ -723,7 +735,11 @@ public class ALU
 					b2 = getBigDecimal(o2);
 					return b1.compareTo(b2) >= 0;
 				default:
-					throw UnsupportedTypeException(o1, o2, node1, node2, ">=");
+					int result = compareObject(o1, o2, node1, node2, ">=");
+					if (result == -2)
+						throw UnsupportedTypeException(o1, o2, node1, node2, ">=");
+					else
+						return result >= 0;
 			}
 		}
 		else
@@ -759,7 +775,11 @@ public class ALU
 					b2 = getBigDecimal(o2);
 					return b1.compareTo(b2) < 0;
 				default:
-					throw UnsupportedTypeException(o1, o2, node1, node2, "<");
+					int result = compareObject(o1, o2, node1, node2, "<");
+					if (result == -2)
+						throw UnsupportedTypeException(o1, o2, node1, node2, "<");
+					else
+						return result < 0;
 			}
 		}
 		else
@@ -795,7 +815,11 @@ public class ALU
 					b2 = getBigDecimal(o2);
 					return b1.compareTo(b2) <= 0;
 				default:
-					throw UnsupportedTypeException(o1, o2, node1, node2, "<=");
+					int result = compareObject(o1, o2, node1, node2, "<=");
+					if (result == -2)
+						throw UnsupportedTypeException(o1, o2, node1, node2, "<=");
+					else
+						return result <= 0;
 			}
 		}
 		else
@@ -805,6 +829,37 @@ public class ALU
 	}
 
 	// *******************
+
+	private static int compareObject(Object a, Object b, final ASTNode node1, final ASTNode node2, String type)
+	{
+		if (a instanceof Comparable && b instanceof Comparable)
+		{
+			Comparable ac = (Comparable) a;
+			try
+			{
+				int result = ac.compareTo(b);
+				if (result > 0)
+					return 1;
+				else if (result < 0)
+					return -1;
+				return result;
+			}
+
+			catch (RuntimeException e)
+			{
+				BeetlException ex = new BeetlException(BeetlException.EXPRESSION_NOT_COMPATIBLE, e);
+				GrammarToken token = GrammarToken.createToken(node1.token.text + " " + node2.token.text,
+						node1.token.line);
+				ex.pushToken(token);
+				throw ex;
+			}
+
+		}
+		else
+		{
+			return -2;
+		}
+	}
 
 	private static RuntimeException UnsupportedTypeException(final Object o1, final Object o2, final ASTNode node1,
 			final ASTNode node2, String type)

@@ -27,6 +27,7 @@
  */
 package org.beetl.core.om;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 
@@ -39,6 +40,7 @@ public class ObjectMethodMatchConf
 	public Method method;
 	//如何转化
 	public int[] convert;
+
 	// 是否需要转化
 	public boolean isNeedConvert;
 
@@ -53,6 +55,9 @@ public class ObjectMethodMatchConf
 
 	public final static int NO_CONVERT = 0;
 
+	//可变数组
+	public final static int VARIABLE_ARRAY = 9;
+
 	public String toString()
 	{
 		String str = method.toString() + ",";
@@ -63,7 +68,43 @@ public class ObjectMethodMatchConf
 		return str;
 	}
 
-	public Object convert(Object o, int i)
+	public Object[] convert(Object[] args)
+	{
+		if (isNeedConvert)
+		{
+			Object[] newArgs = new Object[convert.length];
+			for (int i = 0; i < convert.length; i++)
+			{
+				if (convert[i] != VARIABLE_ARRAY)
+				{
+					Object obj = this.convert(args[i], i);
+					newArgs[i] = obj;
+				}
+				else
+				{
+					Class c = this.method.getParameterTypes()[i].getComponentType();
+					Object arrayObj = Array.newInstance(c, args.length - i);
+					Object[] objs = new Object[args.length - i];
+					for (int j = 0; j < objs.length; j++)
+					{
+
+						Array.set(arrayObj, j, args[i + j]);
+					}
+					newArgs[i] = arrayObj;
+
+				}
+
+			}
+			return newArgs;
+		}
+		else
+		{
+			return args;
+		}
+
+	}
+
+	private Object convert(Object o, int i)
 	{
 		switch (convert[i])
 		{

@@ -1,5 +1,8 @@
 <%
-include("cxxx",
-{a:123}
-){};
+var a = 1;
+var b = {
+	print(a);
+	flush();
+};
+
 %>

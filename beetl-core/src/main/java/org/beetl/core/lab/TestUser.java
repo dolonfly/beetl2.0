@@ -17,10 +17,19 @@ public class TestUser
 	int age = 18;
 	Date bir = null;
 	double salary = 890.12;
-	TestUser lover = null;
-	List friends = new ArrayList();
+	public TestUser lover = null;
+	List friends = null;
 	boolean isOk = false;
 	int id = 0;
+
+	public static enum ORDER
+	{
+		OK, CANCEL
+	};
+
+	public static int MAX = 1;
+
+	public static ORDER tt = ORDER.OK;
 
 	public boolean isOk()
 	{
@@ -30,6 +39,11 @@ public class TestUser
 	public void setOk(boolean isOk)
 	{
 		this.isOk = isOk;
+	}
+
+	public int getCTitle()
+	{
+		return 0;
 	}
 
 	public TestUser(String name)
@@ -47,7 +61,8 @@ public class TestUser
 
 	public String getName()
 	{
-		return name;
+		throw new RuntimeException();
+		//		return name;
 	}
 
 	public void setName(String name)
@@ -97,7 +112,7 @@ public class TestUser
 
 	public List getFriends()
 	{
-		return friends;
+		return null;
 	}
 
 	public void setFriends(List friends)
@@ -135,6 +150,16 @@ public class TestUser
 
 	}
 
+	public int printUsers1(String... strings)
+	{
+		return strings.length;
+	}
+
+	public int printUsers(String str)
+	{
+		return 0;
+	}
+
 	public static List<TestUser> getTestUsers()
 	{
 		TestUser joelli = new TestUser("joelli");
@@ -153,6 +178,7 @@ public class TestUser
 		all.add(joelli);
 		all.add(lucy);
 		all.add(lyy);
+
 		return all;
 
 	}

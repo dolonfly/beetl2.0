@@ -79,9 +79,13 @@ public class ByteWriter_Byte extends ByteWriter
 		this.os = os;
 		this.cs = cs;
 		encode = new DefaultEncoder(cs, this.localBuffer);
-		//		charset = Charset.forName(cs);
-		//		encoder = charset.newEncoder();
-		//		byteBuffer = ByteBuffer.wrap(bs);
+
+	}
+
+	public ByteWriter_Byte(OutputStream os, String cs, Context ctx, ByteWriter parent)
+	{
+		this(os, cs, ctx);
+		this.parent = parent;
 
 	}
 
@@ -97,33 +101,10 @@ public class ByteWriter_Byte extends ByteWriter
 	@Override
 	public final void write(final char[] cbuf, final int len) throws IOException
 	{
-		//		se.write(cbuf, 0, cbuf.length);
 		byte[] bs = new String(cbuf, 0, len).getBytes(cs);
 		write(bs);
 
-		//		encoder.encode(in, out, endOfInput)
-		//		byte[] bs = charset.encode(CharBuffer.wrap(cbuf, 0, len)).array();
-		//		write(bs);
-
-		//		byteBuffer.clear();
-		//		this.encoder.reset().encode(CharBuffer.wrap(cbuf, 0, len), byteBuffer, true);
-		//		encoder.flush(byteBuffer);
-		//		os.write(bs, 0, byteBuffer.position());
-
 	}
-
-	//	public void write(String str) throws IOException
-	//	{
-	//
-	//		se.write(str);
-	//		
-	//		//		if (str != null)
-	//		//		{
-	//		//			byte[] bs = charset.encode(str).array();
-	//		//			write(bs);
-	//		//		}
-	//
-	//	}
 
 	@Override
 	public final void write(final byte[] bs) throws IOException
@@ -151,14 +132,16 @@ public class ByteWriter_Byte extends ByteWriter
 	}
 
 	@Override
-	public ByteWriter getTempWriter()
+	public ByteWriter getTempWriter(ByteWriter parent)
 	{
-		return new ByteWriter_Byte(new NoLockByteArrayOutputStream(), cs, this.ctx);
+		return new ByteWriter_Byte(new NoLockByteArrayOutputStream(), cs, this.ctx, parent);
 	}
 
 	@Override
 	public void flush() throws IOException
 	{
+		if (parent != null)
+			parent.flush();
 		this.os.flush();
 
 	}
@@ -202,13 +185,15 @@ public class ByteWriter_Byte extends ByteWriter
 	@Override
 	public void writeNumberChars(char[] chars, int len) throws IOException
 	{
+
+		byte[] bs = ctx.localBuffer.getByteBuffer(len);
 		for (int i = 0; i < len; i++)
 		{
-			//	byte bs = (byte) (chars[i] & 0xFF);
-			//this.os.write(bs);
-			this.os.write((byte) chars[i]);
+
+			bs[i] = (byte) chars[i];
+
 		}
+		this.os.write(bs, 0, len);
 
 	}
-
 }

@@ -43,14 +43,23 @@ public class VarRef extends Expression implements IVarIndex
 	public Expression safe;
 	public int varIndex;
 	public boolean hasSafe;
+	private GrammarToken firstToken = null;
 
 	public VarRef(VarAttribute[] attributes, boolean hasSafe, Expression safe, GrammarToken token)
+	{
+		this(attributes, hasSafe, safe, token, token);
+
+	}
+
+	public VarRef(VarAttribute[] attributes, boolean hasSafe, Expression safe, GrammarToken token,
+			GrammarToken firstToken)
 	{
 		super(token);
 
 		this.attributes = attributes;
 		this.safe = safe;
 		this.hasSafe = hasSafe;
+		this.firstToken = firstToken;
 
 	}
 
@@ -68,7 +77,7 @@ public class VarRef extends Expression implements IVarIndex
 			else
 			{
 				BeetlException ex = new BeetlException(BeetlException.VAR_NOT_DEFINED);
-				ex.pushToken(this.token);
+				ex.pushToken(this.firstToken);
 				throw ex;
 			}
 		}
@@ -85,10 +94,11 @@ public class VarRef extends Expression implements IVarIndex
 		{
 			return value;
 		}
-		Object attrExp = null;
-		for (VarAttribute attr : attributes)
+
+		for (int i = 0; i < attributes.length; i++)
 		{
 
+			VarAttribute attr = attributes[i];
 			if (value == null)
 			{
 				if (hasSafe)
@@ -98,7 +108,15 @@ public class VarRef extends Expression implements IVarIndex
 				else
 				{
 					BeetlException be = new BeetlException(BeetlException.NULL, "空指针");
-					be.pushToken(attr.token);
+					if (i == 0)
+					{
+						be.pushToken(this.firstToken);
+					}
+					else
+					{
+						be.pushToken(attributes[i - 1].token);
+					}
+
 					throw be;
 				}
 
@@ -164,6 +182,15 @@ public class VarRef extends Expression implements IVarIndex
 
 		}
 		this.type = lastType;
+		//要review代码，这段在2.0.1的代码现在2.0.11才发现漏写，气人！
+		if (safe != null)
+		{
+			safe.infer(inferCtx);
+			if (!safe.type.equals(this.type))
+			{
+				this.type = Type.ObjectType;
+			}
+		}
 	}
 
 }

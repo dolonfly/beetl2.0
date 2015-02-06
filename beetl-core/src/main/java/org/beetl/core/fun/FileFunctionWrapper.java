@@ -66,13 +66,29 @@ public class FileFunctionWrapper implements Function
 			}
 
 			template.renderTo(ctx.byteWriter);
-			return null;
+			Object[] vars = template.getCtx().vars;
+			Object o = vars[vars.length - 1];
+			if (o != Context.NOT_EXIST_OBJECT)
+			{
+				return o;
+			}
+			else
+			{
+				return null;
+			}
 
+		}
+
+		catch (BeetlException ex)
+		{
+
+			throw ex;
 		}
 		catch (Exception ex)
 		{
 			BeetlException be = new BeetlException(BeetlException.NATIVE_CALL_EXCEPTION, "调用方法出错 " + this.resourceId,
 					ex);
+
 			throw be;
 		}
 
